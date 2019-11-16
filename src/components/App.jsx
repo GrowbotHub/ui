@@ -91,6 +91,9 @@ export default () => {
     const classes = useStyles();
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
+    const [app, setApp] = useState({
+        api: '',
+    });
 
     const handleDrawerOpen = () => {
         setOpen(true);
@@ -101,10 +104,13 @@ export default () => {
     };
 
     useEffect(() => {
+        console.log('Getting RPi API...');
         axios.get(
             `https://growbothub.netlify.com/.netlify/functions/public_url`
         ).then((response) => {
-            console.log(response)
+            app.api = response.data.connection.proxy;
+            console.log(`RPi API is ${app.api}`);
+            setApp(app);
         });
     }, []);
 
@@ -168,14 +174,12 @@ export default () => {
                             <ListItemText primary={'Settings'} />
                         </ListItem>
                     </List>
-
-
-
                 </Drawer>
+
                 <main className={classes.content}>
                     <div className={classes.toolbar} />
 
-                    <AppContext.Provider>
+                    <AppContext.Provider value={app}>
                         <Route path="/" exact component={GrowthStage} />
                         <Route path="/notfound" exact component={NotFound} />
                     </AppContext.Provider>

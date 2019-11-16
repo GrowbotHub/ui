@@ -48,8 +48,10 @@ module.exports = (env, options) => {
         devServer: {
             historyApiFallback: true,
             contentBase: './',
-            hot: true,
             inline: true,
+            watchOptions: {
+                poll: true
+            },
         },
     }
 
