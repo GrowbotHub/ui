@@ -39,7 +39,7 @@ exports.handler = async (event) => {
         body: JSON.stringify(response.data),
         headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Origin': '*',
         },
     }
 }

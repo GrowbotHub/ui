@@ -20,6 +20,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import NotFound from './NotFound.jsx';
+import axios from 'axios';
 
 
 
@@ -100,7 +101,11 @@ export default () => {
     };
 
     useEffect(() => {
-
+        axios.get(
+            `https://growbothub.netlify.com/.netlify/functions/public_url`
+        ).then((response) => {
+            console.log(response)
+        });
     }, []);
 
     return (
