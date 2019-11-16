@@ -12,14 +12,16 @@ const hostip = '1.1.1.1';
 
 exports.handler = async (event) => {
     let token;
+    let response;
 
-    const response = await axios.post(
+    response = await axios.post(
         `${rootUrl}/user/login`,
         { username, password },
         { headers: { developerkey } }
-    )
+    );
+    token = response.data.token;
 
-    const response = await axios
+    response = await axios
         .post(
             `${rootUrl}/device/connect`,
             {
@@ -33,7 +35,8 @@ exports.handler = async (event) => {
                     token
                 }
             }
-        )
+        );
+
     return {
         statusCode: 200,
         body: JSON.stringify(response.data),
