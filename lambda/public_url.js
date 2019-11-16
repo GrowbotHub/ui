@@ -6,43 +6,41 @@ const developerkey = process.env.REMOTEIT_DEVELOPER_KEY;
 const username = process.env.REMOTEIT_USERNAME;
 const password = process.env.REMOTEIT_PASSWORD;
 const deviceaddress = process.env.REMOTEIT_DEVICEADDRESS;
-const wait = "true";
+const wait = 'true';
 const hostip = '1.1.1.1';
 
 
 exports.handler = async (event) => {
     let token;
 
-    try {
-        const response = await axios.post(
-            `${rootUrl}/user/login`,
-            { username, password },
-            { headers: { developerkey } }
-        )
-        token = response.data.token;
-    } catch (e) {
-        return { statusCode: 500, body: e.data };
-    }
+    const response = await axios.post(
+        `${rootUrl}/user/login`,
+        { username, password },
+        { headers: { developerkey } }
+    )
 
-    try {
-        const response = await axios
-            .post(
-                `${rootUrl}/device/connect`,
-                {
-                    deviceaddress,
-                    wait,
-                    hostip
-                },
-                {
-                    headers: {
-                        developerkey,
-                        token
-                    }
+    const response = await axios
+        .post(
+            `${rootUrl}/device/connect`,
+            {
+                deviceaddress,
+                wait,
+                hostip
+            },
+            {
+                headers: {
+                    developerkey,
+                    token
                 }
-            )
-        return { statusCode: 200, body: JSON.stringify(response.data) }
-    } catch (e) {
-        return { statusCode: 500, body: e.data };
+            }
+        )
+    return {
+        statusCode: 200,
+        body: JSON.stringify(response.data),
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Headers': '*',
+        },
     }
 }
 
