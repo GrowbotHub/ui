@@ -69,7 +69,7 @@ const useStyles = makeStyles(theme => ({
             duration: theme.transitions.duration.leavingScreen,
         }),
         overflowX: 'hidden',
-        width: theme.spacing(5) + 1,
+        width: 0,
         [theme.breakpoints.up('sm')]: {
             width: theme.spacing(7) + 1,
         },
@@ -108,9 +108,9 @@ export default () => {
         axios.get(
             `https://growbothub.netlify.com/.netlify/functions/public_url`
         ).then((response) => {
-            app.api = response.data.connection.proxy;
-            console.log(`RPi API is ${app.api}`);
-            setApp(app);
+            let url = response.data.connection.proxy;
+            setApp({ ...app, api: url });
+            console.log(`RPi API is ${url}`);
         });
     }, []);
 
