@@ -40,7 +40,7 @@ exports.handler = async (event) => {
                     }
                 }
             )
-        return { statusCode: 200, body: response.data }
+        return { statusCode: 200, body: JSON.stringify(response.data) }
     } catch (e) {
         return { statusCode: 500, body: e.data };
     }
