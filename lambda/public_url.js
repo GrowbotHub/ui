@@ -7,21 +7,12 @@ const username = process.env.REMOTEIT_USERNAME;
 const password = process.env.REMOTEIT_PASSWORD;
 const deviceaddress = process.env.REMOTEIT_DEVICEADDRESS;
 const wait = 'true';
-const hostip = '1.1.1.1';
 
 
-exports.handler = async (event) => {
-    return {
-        statusCode: 200,
-        body: JSON.stringify(event),
-        headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-        },
-    } 
-    
+exports.handler = async (event) => {    
     let token;
     let response;
+    let hostip = event.headers['x-forwarded-for'];
 
     response = await axios.post(
         `${rootUrl}/user/login`,
