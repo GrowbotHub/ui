@@ -11,6 +11,15 @@ const hostip = '1.1.1.1';
 
 
 exports.handler = async (event) => {
+    return {
+        statusCode: 200,
+        body: JSON.stringify(event),
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+        },
+    } 
+    
     let token;
     let response;
 
