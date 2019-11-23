@@ -108,7 +108,7 @@ export default () => {
         axios.get(
             `https://growbothub.netlify.com/.netlify/functions/public_url`
         ).then((response) => {
-            let url = response.data.connection.proxy;
+            let url = response.data.connection.proxyserver + ':' + response.data.connection.proxyport;
             setApp({ ...app, api: url });
             console.log(`RPi API is ${url}`);
         });

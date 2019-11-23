@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
-    GridListTile,
-    GridList,
+    Grid,
     Typography,
     Switch,
     FormControlLabel,
@@ -12,9 +11,9 @@ import { useTheme } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import Plot from 'react-plotly.js';
 import AppContext from '../context/AppContext.jsx';
-import axios from 'axios';
 import useInterval from '@use-it/interval';
-
+import ROSLIB from 'roslib';
+import {Line} from 'react-chartjs-2';
 
 const style = {
     root: {
@@ -29,7 +28,7 @@ const style = {
 
 let counter = 0;
 
-const data = [
+const datas = [
     {
         name: 'Temperature',
         x: [],
@@ -65,47 +64,86 @@ const layout = {
     },
 }
 
+const data = {
+    labels: [],
+    datasets: [
+      {
+        label: 'Temperature',
+        data: [ ]
+      },
+      {
+        label: 'Humidity',
+        data: [ ]
+      }
+    ]
+  };
+
+let ros = new ROSLIB.Ros();
+
 export default () => {
-    const [revision, setRevision] = useState(0);
+    const [tempData, setTempData] = useState(data);
     const [readings, setReadings] = useState({
         image: 'https://miro.medium.com/max/1080/0*DqHGYPBA-ANwsma2.gif',
         lights: false,
     });
+    const tempChart = useRef(null);
     const appCtx = useContext(AppContext);
+    const MAX_DATAPOINTS = 12;
 
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('sm'));
-    const columns = matches ? 1 : 3;
-    const MAX_DATAPOINTS = 20;
-    
-    const getDeviceSummary = async () => {
-        return (await axios.get(`${appCtx.api}/device/summary`)).data;
-    };
+    const deviceRead = (device) => {
+        let service = new ROSLIB.Service({
+            ros : ros,
+            name : 'device_read',
+            serviceType : 'growbothub_tlc/DeviceReadWrite'
+          });
+        
+          let request = new ROSLIB.ServiceRequest({
+            device_id: device,
+            command: ''
+          });
 
-    const deviceRead = async (device) => {
-        return (await axios.get(`${appCtx.api}/device/${device}/read`)).data;
+        return new Promise(function(resolve, reject) {
+            service.callService(request, (result) => {
+                let response = JSON.parse(result.readings);
+                resolve(response);
+            });
+          });
     };
 
     const deviceWrite = async (device, command) => {
-        return (await axios.get(`${appCtx.api}/device/${device}/write`,  { params: command })).data;
+        let service = new ROSLIB.Service({
+            ros : ros,
+            name : 'device_write',
+            serviceType : 'growbothub_tlc/DeviceReadWrite'
+          });
+        
+          let request = new ROSLIB.ServiceRequest({
+            device_id: device,
+            command: JSON.stringify(command)
+          });
+
+        return new Promise(function(resolve, reject) {
+            service.callService(request, (result) => {
+                resolve();
+            });
+          });
     };
 
     const readTemperatureHumidity = async () => {
         let res = await deviceRead('temp');
+        let d = (new Date());
+        let time = `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
 
-        data[0].y = data[0].y.slice(-MAX_DATAPOINTS);
-        data[0].x = data[0].x.slice(-MAX_DATAPOINTS);
+        tempData.labels.push(time);
+        tempData.labels = tempData.labels.slice(-MAX_DATAPOINTS);
 
-        data[1].y = data[1].y.slice(-MAX_DATAPOINTS);
-        data[1].x = data[1].x.slice(-MAX_DATAPOINTS);
+        tempData.datasets[0].data.push(res.temperature);
+        tempData.datasets[0].data = tempData.datasets[0].data.slice(-MAX_DATAPOINTS);
 
-        data[0].x.push(++counter);
-        data[0].y.push(res.temperature);
+        tempData.datasets[1].data.push(res.humidity);
+        tempData.datasets[1].data = tempData.datasets[1].data.slice(-MAX_DATAPOINTS);
 
-        data[1].x.push(counter);
-        data[1].y.push(res.humidity);
-
-        setRevision(Math.random());
+        setTempData(tempData);
     }
 
     const readCamera = async () => {
@@ -119,7 +157,6 @@ export default () => {
     };
 
     const poolData = async () => {
-        let res = await getDeviceSummary();
         readLights();
     };
 
@@ -136,9 +173,9 @@ export default () => {
     }, 4000);
 
     useEffect(() => {
-        
         if (appCtx.api !== '') {
             console.log('start', appCtx.api);
+            ros.connect('ws://' + appCtx.api);
             poolData();
         }
     }, [appCtx.api]);
@@ -157,8 +194,8 @@ export default () => {
 
     return (
         <div style={style.root}>
-            <GridList cols={columns} spacing={1} padding={0}>
-                <GridListTile>
+            <Grid container spacing={3}>
+                <Grid item xs={1}>
                     <FormControlLabel
                         control={
                             <Switch
@@ -170,21 +207,17 @@ export default () => {
                         }
                         label="Lights"
                     />
-                </GridListTile>
-                <GridListTile cols={Math.min(2, columns)}>
+                </Grid>
+
+
+                <Grid item xs={6}>
                     <img src={readings.image} />
-                </GridListTile>
-                <GridListTile cols={1} rows={2} style={{ display: 'flex', flexDirection: 'column' }}>
-                <Plot
-                        style={{ flex: 1, width: '100%', height: '100%' }}
-                        datarevision={revision}
-                        data={data}
-                        config={{ responsive: true }}
-                        useResizeHandler={true}
-                        layout={layout}
-                    />
-                </GridListTile>
-            </GridList>
+                </Grid>
+
+                <Grid item xs={12}>
+                    <Line ref={tempChart} data={tempData} options={{maintainAspectRatio: false}} style={{ width: '100%', height: '100%' }} />
+                </Grid>
+            </Grid>
         </div>
     );
 }
