@@ -7,9 +7,6 @@ import {
     FormControlLabel,
     FormGroup
 } from '@material-ui/core';
-import { useTheme } from '@material-ui/core/styles';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
-import Plot from 'react-plotly.js';
 import AppContext from '../context/AppContext.jsx';
 import useInterval from '@use-it/interval';
 import ROSLIB from 'roslib';
