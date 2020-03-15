@@ -10,7 +10,7 @@ import {
 import AppContext from '../context/AppContext.jsx';
 import useInterval from '@use-it/interval';
 import ROSLIB from 'roslib';
-import {Line} from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 
 const style = {
     root: {
@@ -64,16 +64,16 @@ const layout = {
 const data = {
     labels: [],
     datasets: [
-      {
-        label: 'Temperature',
-        data: [ ]
-      },
-      {
-        label: 'Humidity',
-        data: [ ]
-      }
+        {
+            label: 'Temperature',
+            data: []
+        },
+        {
+            label: 'Humidity',
+            data: []
+        }
     ]
-  };
+};
 
 let ros = new ROSLIB.Ros();
 
@@ -82,6 +82,7 @@ export default () => {
     const [readings, setReadings] = useState({
         image: 'https://miro.medium.com/max/1080/0*DqHGYPBA-ANwsma2.gif',
         lights: false,
+        pumps: false,
     });
     const tempChart = useRef(null);
     const appCtx = useContext(AppContext);
@@ -89,41 +90,41 @@ export default () => {
 
     const deviceRead = (device) => {
         let service = new ROSLIB.Service({
-            ros : ros,
-            name : 'device_read',
-            serviceType : 'growbothub_tlc/DeviceReadWrite'
-          });
-        
-          let request = new ROSLIB.ServiceRequest({
+            ros: ros,
+            name: 'device_read',
+            serviceType: 'growbothub_tlc/DeviceReadWrite'
+        });
+
+        let request = new ROSLIB.ServiceRequest({
             device_id: device,
             command: ''
-          });
+        });
 
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             service.callService(request, (result) => {
                 let response = JSON.parse(result.readings);
                 resolve(response);
             });
-          });
+        });
     };
 
     const deviceWrite = async (device, command) => {
         let service = new ROSLIB.Service({
-            ros : ros,
-            name : 'device_write',
-            serviceType : 'growbothub_tlc/DeviceReadWrite'
-          });
-        
-          let request = new ROSLIB.ServiceRequest({
+            ros: ros,
+            name: 'device_write',
+            serviceType: 'growbothub_tlc/DeviceReadWrite'
+        });
+
+        let request = new ROSLIB.ServiceRequest({
             device_id: device,
             command: JSON.stringify(command)
-          });
+        });
 
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             service.callService(request, (result) => {
                 resolve();
             });
-          });
+        });
     };
 
     const readTemperatureHumidity = async () => {
@@ -134,10 +135,10 @@ export default () => {
         tempData.labels.push(time);
         tempData.labels = tempData.labels.slice(-MAX_DATAPOINTS);
 
-        tempData.datasets[0].data.push(res.temperature);
+        tempData.datasets[0].data.push(res.temperature.toFixed(2));
         tempData.datasets[0].data = tempData.datasets[0].data.slice(-MAX_DATAPOINTS);
 
-        tempData.datasets[1].data.push(res.humidity);
+        tempData.datasets[1].data.push(res.humidity.toFixed(2));
         tempData.datasets[1].data = tempData.datasets[1].data.slice(-MAX_DATAPOINTS);
 
         setTempData(tempData);
@@ -148,13 +149,12 @@ export default () => {
         setReadings({ ...readings, image: res.base64 });
     };
 
-    const readLights = async () => {
-        let res = await deviceRead('lights');
-        setReadings({ ...readings, lights: res.value == '1'});
-    };
-
     const poolData = async () => {
-        readLights();
+        let res = await deviceRead('lights');
+        setReadings({ ...readings, lights: res.value == '1' });
+
+        res = await deviceRead('pumps');
+        setReadings({ ...readings, pumps: res.value == '1' });
     };
 
     useInterval(() => {
@@ -192,27 +192,42 @@ export default () => {
     return (
         <div style={style.root}>
             <Grid container spacing={3}>
-                <Grid item xs={1}>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={readings.lights}
-                                onChange={handleChange('lights')}
-                                value="lights"
-                                color="primary"
-                            />
-                        }
-                        label="Lights"
-                    />
+                <Grid item xs={12} md={6}>
+                    <Grid item xs={6}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={readings.lights}
+                                    onChange={handleChange('lights')}
+                                    value="lights"
+                                    color="primary"
+                                />
+                            }
+                            label="Lights"
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={readings.pumps}
+                                    onChange={handleChange('pumps')}
+                                    value="pumps"
+                                    color="primary"
+                                />
+                            }
+                            label="Pumps"
+                        />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                        <Line ref={tempChart} data={tempData} options={{ maintainAspectRatio: false }} style={{ width: '100%', height: '100%' }} />
+                    </Grid>
                 </Grid>
 
-
-                <Grid item xs={6}>
-                    <img src={readings.image} />
-                </Grid>
-
-                <Grid item xs={12}>
-                    <Line ref={tempChart} data={tempData} options={{maintainAspectRatio: false}} style={{ width: '100%', height: '100%' }} />
+                <Grid item xs={6} md={6}>
+                    <img style={{ width: '100%' }} src={readings.image} />
                 </Grid>
             </Grid>
         </div>
